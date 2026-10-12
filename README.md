@@ -48,3 +48,10 @@ Proveedores LLM: `UNSA_LLM_PROVIDER=claude|gemini|openrouter|agy|fake` (+ la API
 
 Agent Card en `/.well-known/agent-card.json`; JSON-RPC en `POST /a2a` (`message/send`,
 `message/stream`, `tasks/get`, `tasks/cancel`).
+
+## Notas operativas
+
+- `agy` (Antigravity) no necesita API key: `unsa-mind agy "pregunta"`. Si el modelo por defecto da
+  503 transitorios, define `UNSA_LLM_MODEL` y `UNSA_LLM_FALLBACK_MODELS` (ver `agy models`).
+- Cambiar de embedder o dimensión exige reindexar (el índice SQLite lo detecta y avisa).
+- Confirmar las URLs reales en `config/sources.yaml` y respetar robots.txt / términos de la UNSA.

@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     llm_provider: Literal["fake", "claude", "gemini", "openrouter", "agy"] = "fake"
     llm_model: str | None = None  # None => modelo por defecto del proveedor
     llm_fallback_models: list[str] = Field(default_factory=list)  # cadena de respaldo
-    llm_timeout_s: float = 60.0
+    llm_timeout_s: float = 120.0  # agy puede tardar varios segundos por turno
     anthropic_api_key: str | None = None
     gemini_api_key: str | None = None
     openrouter_api_key: str | None = None
