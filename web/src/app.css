@@ -1,0 +1,204 @@
+@import 'tailwindcss';
+
+:root {
+	--bg: #f7f4ef;
+	--surface: #ffffff;
+	--surface-2: #f0ebe3;
+	--text: #231a1b;
+	--muted: #5e5254;
+	--border: #d9d0c3;
+	--primary: #7a1f2b; /* granate */
+	--primary-hover: #5f1721;
+	--on-primary: #ffffff;
+	--accent: #b8892b; /* dorado */
+	--user-bg: #7a1f2b;
+	--danger: #a4262c;
+	--ok: #1f6b3a;
+	--ring: #b8892b;
+	color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #17110f;
+		--surface: #221a19;
+		--surface-2: #2c2220;
+		--text: #f1e9e4;
+		--muted: #b9aaa5;
+		--border: #3d302d;
+		--primary: #d9a441;
+		--primary-hover: #e8b95a;
+		--on-primary: #1b1208;
+		--accent: #d9a441;
+		--user-bg: #5f1721;
+		--danger: #ff8a8f;
+		--ok: #7fd49a;
+		--ring: #d9a441;
+		color-scheme: dark;
+	}
+}
+
+html,
+body {
+	background: var(--bg);
+	color: var(--text);
+	font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+	font-size: 17px;
+	line-height: 1.55;
+}
+
+.sans {
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+:focus-visible {
+	outline: 3px solid var(--ring);
+	outline-offset: 2px;
+}
+
+.btn {
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	font-size: 0.9rem;
+	border: 1px solid var(--border);
+	background: var(--surface);
+	color: var(--text);
+	border-radius: 0.5rem;
+	padding: 0.45rem 0.9rem;
+	min-height: 2.5rem;
+	cursor: pointer;
+}
+.btn:hover:not(:disabled) {
+	border-color: var(--primary);
+}
+.btn:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+.btn-primary {
+	background: var(--primary);
+	color: var(--on-primary);
+	border-color: var(--primary);
+	font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) {
+	background: var(--primary-hover);
+	border-color: var(--primary-hover);
+}
+.btn-danger {
+	color: var(--danger);
+}
+
+.field {
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	font-size: 0.95rem;
+	width: 100%;
+	background: var(--surface);
+	color: var(--text);
+	border: 1px solid var(--border);
+	border-radius: 0.5rem;
+	padding: 0.5rem 0.7rem;
+	min-height: 2.5rem;
+}
+
+.label {
+	font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--muted);
+	display: block;
+	margin-bottom: 0.25rem;
+}
+
+.card {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 0.75rem;
+	padding: 1rem;
+}
+
+/* Markdown renderizado */
+.md > :first-child {
+	margin-top: 0;
+}
+.md > :last-child {
+	margin-bottom: 0;
+}
+.md p,
+.md ul,
+.md ol,
+.md table,
+.md pre,
+.md blockquote {
+	margin: 0.6rem 0;
+}
+.md ul {
+	list-style: disc;
+	padding-left: 1.4rem;
+}
+.md ol {
+	list-style: decimal;
+	padding-left: 1.4rem;
+}
+.md a {
+	color: var(--primary);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	overflow-wrap: anywhere;
+}
+.md code {
+	background: var(--surface-2);
+	padding: 0.1rem 0.3rem;
+	border-radius: 0.25rem;
+	font-size: 0.88em;
+}
+.md pre {
+	background: var(--surface-2);
+	padding: 0.7rem;
+	border-radius: 0.5rem;
+	overflow-x: auto;
+}
+.md pre code {
+	background: none;
+	padding: 0;
+}
+.md blockquote {
+	border-left: 3px solid var(--accent);
+	padding-left: 0.8rem;
+	color: var(--muted);
+}
+.md table {
+	display: block;
+	overflow-x: auto;
+	border-collapse: collapse;
+	font-size: 0.92rem;
+}
+.md th,
+.md td {
+	border: 1px solid var(--border);
+	padding: 0.3rem 0.6rem;
+}
+.md th {
+	background: var(--surface-2);
+}
+.md h1,
+.md h2,
+.md h3 {
+	font-weight: 700;
+	margin: 0.8rem 0 0.3rem;
+}
+
+.sr-only-live {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation: none !important;
+		transition: none !important;
+	}
+}
