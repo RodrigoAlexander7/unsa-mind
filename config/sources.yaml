@@ -1,0 +1,26 @@
+# Catálogo semilla de fuentes. Se importa al arrancar (no pisa las ya editadas en la BD).
+# authority: high (reglamentos/TUPA) | medium | low (noticias)
+# interval_minutes: opcional; si falta, la fuente se actualiza en cada disparo del scheduler global.
+sources:
+  - id: admision-portal
+    name: Admisión UNSA
+    url: https://www.unsa.edu.pe/admision/
+    authority: high
+    follow_links: true
+    max_pages: 15
+    interval_minutes: 720
+    metadata: {tema: admision, nivel: pregrado}
+  - id: posgrado-portal
+    name: Escuela de Posgrado
+    url: https://posgrado.unsa.edu.pe/
+    authority: high
+    follow_links: true
+    max_pages: 20
+    metadata: {tema: posgrado, nivel: posgrado}
+  - id: noticias
+    name: Noticias institucionales
+    url: https://www.unsa.edu.pe/noticias/
+    authority: low
+    interval_minutes: 240
+    metadata: {tema: general}
+  # TODO: confirmar URLs reales de reglamentos, TUPA y convenios antes de producción.
