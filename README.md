@@ -1,63 +1,74 @@
 # unsa-mind
 
-Asistente virtual institucional de la Universidad Nacional de San Agustín (UNSA): RAG híbrido
-sobre admisión, posgrado, convenios y trámites, con actualización por web scraping programable,
-API REST + SvelteKit, interfaz **A2A** (agent-to-agent) y CLI.
+Asistente virtual institucional de la **Universidad Nacional de San Agustín (UNSA)**. Responde con
+precisión de secretaría académica sobre admisión, posgrado, convenios y trámites, **citando la fuente
+y la fecha de vigencia**, y se abstiene —derivando a la oficina correcta— cuando no tiene información.
 
-## Arquitectura (clean architecture / puertos y adaptadores)
+## Qué incluye
 
-```
-domain/            entidades y errores (sin dependencias)
-application/
-  ports/           LLM, Embedder, VectorStore, Fetcher, Parser, Scheduler, Repositorios, Reranker
-  services/        chunker estructural, router de intención, prompts
-  use_cases/       AskQuestion, IngestSource, RunUpdateCycle
-adapters/          llm (claude, gemini, openrouter, agy) · embeddings · vectorstore (sqlite, qdrant)
-                   persistence (sqlite) · scraping (httpx, scrapling, html, pdf) · scheduling · memory
-interfaces/        api (FastAPI + SSE) · a2a (JSON-RPC) · cli
-config/            settings (UNSA_*) y raíz de composición (container.py)
-web/               SvelteKit (chat, /embed, /admin)
-```
+| Capacidad | Descripción |
+|---|---|
+| RAG híbrido | Chunking por artículo, búsqueda densa + BM25 con RRF, prioridad por autoridad, abstención por umbral |
+| Actualización por scraping | Fuentes configurables, detección de cambios por hash, versionado, frecuencia ajustable en caliente (intervalo o cron) |
+| LLM intercambiable | Claude, Gemini, OpenRouter o el CLI `agy` (sin API key) |
+| Interfaces | API REST con streaming SSE, **A2A** (agent-to-agent), CLI y web SvelteKit (chat, `/embed`, `/admin`) |
+| Arquitectura | Clean architecture con puertos y adaptadores |
 
-La dependencia apunta siempre hacia adentro: `interfaces → application → domain`; los adaptadores
-implementan los puertos y solo `config/container.py` los conoce.
-
-## Actualización con scraping
-
-- Catálogo de fuentes: `config/sources.yaml` (semilla) y CRUD en `/api/admin/sources`.
-- Frecuencia global **ajustable en caliente**: intervalo en minutos o cron, vía
-  `unsa-mind schedule set --cron "0 3 * * *"`, `PUT /api/admin/schedule` o la pestaña *Programación* del admin.
-- Cada fuente puede tener su propio `interval_minutes` (p. ej. noticias cada 4 h, reglamentos semanal).
-- Detección por hash: solo se re-embeben los documentos que cambiaron; las versiones anteriores
-  quedan inactivas (auditoría), no se borran.
-
-## Uso rápido
+## Inicio rápido
 
 ```bash
-python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"
+python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"   # Linux/macOS: .venv/bin/pip
 cp .env.example .env
-unsa-mind ingest            # rastrear fuentes
-unsa-mind chat              # REPL con el LLM configurado
-unsa-mind agy               # REPL usando el CLI agy directamente (sin API key)
-unsa-mind serve             # API + scheduler en :8000
+unsa-mind ingest                 # rastrea config/sources.yaml
+unsa-mind agy "¿Cómo solicito la reserva de matrícula?"   # usa el CLI agy, sin API key
+unsa-mind serve                  # API + A2A + scheduler en :8000
+cd web && pnpm install && pnpm dev   # interfaz en :5173
 ```
 
-Proveedores LLM: `UNSA_LLM_PROVIDER=claude|gemini|openrouter|agy|fake` (+ la API key correspondiente).
+> Con `UNSA_LLM_PROVIDER=fake` y `UNSA_EMBEDDER_PROVIDER=hashing` (valores por defecto) todo corre
+> offline, útil para probar. Para calidad real configure un LLM y embeddings reales
+> ([guía](docs/OPERACION.md#2-elegir-proveedor-de-llm)).
 
-## A2A
+## Cómo funciona (resumen)
 
-Agent Card en `/.well-known/agent-card.json`; JSON-RPC en `POST /a2a` (`message/send`,
-`message/stream`, `tasks/get`, `tasks/cancel`).
-
-## Notas operativas
-
-- `agy` (Antigravity) no necesita API key: `unsa-mind agy "pregunta"`. Si el modelo por defecto da
-  503 transitorios, define `UNSA_LLM_MODEL` y `UNSA_LLM_FALLBACK_MODELS` (ver `agy models`).
-- Cambiar de embedder o dimensión exige reindexar (el índice SQLite lo detecta y avisa).
-- Confirmar las URLs reales en `config/sources.yaml` y respetar robots.txt / términos de la UNSA.
+```
+Fuentes UNSA ─► fetch ─► Markdown con jerarquía ─► ¿hash cambió? ─► chunks + contexto ─► embeddings ─► índice híbrido
+Pregunta ─► intención ─► búsqueda híbrida (denso+BM25, RRF) ─► peso por autoridad ─► ¿score ≥ umbral?
+                                                        ├─ no ─► abstención + oficina a consultar
+                                                        └─ sí ─► LLM con prompt de secretaría ─► respuesta + citas + vigencia
+```
 
 ## Documentación
 
-- [Arquitectura](docs/ARQUITECTURA.md) — capas, puertos, flujos de consulta y actualización
-- [Stack tecnológico](docs/STACK.md) — tecnologías, decisiones, despliegue y pendientes
-- [API, A2A y CLI](docs/API.md) — endpoints, protocolo A2A y comandos
+| Documento | Contenido |
+|---|---|
+| [docs/RAG.md](docs/RAG.md) | **El cerebro**: técnicas de RAG, fórmulas, decisiones, límites y hoja de ruta |
+| [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Capas, puertos y adaptadores, flujos, seguridad |
+| [docs/STACK.md](docs/STACK.md) | Tecnologías, dependencias, decisiones y despliegue |
+| [docs/API.md](docs/API.md) | REST, A2A (JSON-RPC) y comandos de la CLI |
+| [docs/OPERACION.md](docs/OPERACION.md) | Puesta en marcha, fuentes, programación, calibración, solución de problemas |
+
+## Estructura
+
+```
+src/unsa_mind/
+  domain/        entidades y errores
+  application/   puertos, servicios (chunker, intención, prompts) y casos de uso
+  adapters/      llm · embeddings · vectorstore · persistence · scraping · scheduling · memory
+  interfaces/    api (FastAPI) · a2a · cli
+  config/        settings (UNSA_*) y raíz de composición
+web/             SvelteKit
+config/          sources.yaml (catálogo semilla de fuentes)
+docs/            documentación
+tests/           pytest, sin red
+```
+
+## Estado y advertencias
+
+- Las URLs de `config/sources.yaml` son **provisionales**: confirme las reales y la autorización de
+  la UNSA para rastrearlas (robots.txt y términos de uso).
+- Fechas, costos y vacantes aún se resuelven por texto; la tabla estructurada es la mejora prioritaria
+  ([RAG.md §7](docs/RAG.md#7-límites-conocidos-honestidad-técnica)).
+- Proveedores probados con transporte simulado; `agy` probado en real. Claude/Gemini/OpenRouter con
+  API key real, Qdrant y Scrapling real están sin validar.
+- Asistente informativo: para trámites oficiales, consulte en Secretaría.

@@ -1,6 +1,6 @@
 # Arquitectura
 
-Clean architecture con puertos y adaptadores. La dependencia apunta siempre hacia adentro.
+Clean architecture con puertos y adaptadores. La dependencia apunta siempre hacia adentro. El detalle del motor de recuperación y generación está en [RAG.md](RAG.md).
 
 ```
 interfaces ──► application ──► domain
