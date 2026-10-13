@@ -55,3 +55,9 @@ Agent Card en `/.well-known/agent-card.json`; JSON-RPC en `POST /a2a` (`message/
   503 transitorios, define `UNSA_LLM_MODEL` y `UNSA_LLM_FALLBACK_MODELS` (ver `agy models`).
 - Cambiar de embedder o dimensión exige reindexar (el índice SQLite lo detecta y avisa).
 - Confirmar las URLs reales en `config/sources.yaml` y respetar robots.txt / términos de la UNSA.
+
+## Documentación
+
+- [Arquitectura](docs/ARQUITECTURA.md) — capas, puertos, flujos de consulta y actualización
+- [Stack tecnológico](docs/STACK.md) — tecnologías, decisiones, despliegue y pendientes
+- [API, A2A y CLI](docs/API.md) — endpoints, protocolo A2A y comandos
