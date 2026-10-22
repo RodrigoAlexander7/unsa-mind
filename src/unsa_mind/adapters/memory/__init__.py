@@ -72,6 +72,9 @@ class InMemoryVectorStore:
                 n += 1
         return n
 
+    async def list_chunks(self, doc_id: str) -> list[Chunk]:
+        return sorted((c for c in self._chunks.values() if c.doc_id == doc_id), key=lambda c: c.position)
+
     async def search(
         self,
         *,

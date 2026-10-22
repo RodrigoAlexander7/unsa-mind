@@ -139,6 +139,41 @@ class UpdateRequest(BaseModel):
     only: list[str] | None = None
 
 
+class DocumentOut(BaseModel):
+    doc_id: str
+    source_id: str
+    url: str
+    title: str
+    version: int
+    content_hash: str
+    fetched_at: str | None = None
+    active: bool
+
+
+class DocumentPage(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: list[DocumentOut]
+
+
+class ChunkOut(BaseModel):
+    id: str
+    position: int
+    section: str
+    text: str
+    context: str
+    authority: str
+    metadata: dict[str, Any]
+    active: bool
+    updated_at: str | None = None
+
+
+class DocumentChunks(BaseModel):
+    document: DocumentOut
+    chunks: list[ChunkOut]
+
+
 class StatsOut(BaseModel):
     chunks_active: int
     documents_active: int

@@ -174,6 +174,13 @@ class SqliteVectorStore:
 
         return await asyncio.to_thread(self._db.run_sync, fn, write=False)
 
+    async def list_chunks(self, doc_id: str) -> list[Chunk]:
+        def fn(c: sqlite3.Connection) -> list[Chunk]:
+            ids = [r["id"] for r in c.execute("SELECT id FROM chunks WHERE doc_id = ?", (doc_id,))]
+            return sorted(self._load_chunks(c, ids).values(), key=lambda ch: ch.position)
+
+        return await asyncio.to_thread(self._db.run_sync, fn, write=False)
+
     async def search(
         self,
         *,

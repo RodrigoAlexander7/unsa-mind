@@ -131,6 +131,19 @@ async def test_stats(secured):
     assert s["sources"] == 1 and s["documents_active"] == 1 and s["chunks_active"] >= 1
 
 
+async def test_documents_read_only(secured):
+    cl, _ = secured
+    assert (await cl.get("/api/admin/documents")).status_code == 401
+    page = (await cl.get("/api/admin/documents", headers=AUTH)).json()
+    assert page["total"] == 1 and page["items"][0]["source_id"] == "reg"
+    assert (await cl.get("/api/admin/documents?source_id=otra", headers=AUTH)).json()["total"] == 0
+    doc_id = page["items"][0]["doc_id"]
+    body = (await cl.get(f"/api/admin/documents/{doc_id}/chunks", headers=AUTH)).json()
+    assert body["document"]["doc_id"] == doc_id
+    assert body["chunks"] and "reserva de matrícula" in body["chunks"][0]["text"]
+    assert (await cl.get("/api/admin/documents/nope/chunks", headers=AUTH)).status_code == 404
+
+
 async def test_put_schedule_applies_hot(secured):
     cl, c = secured
     assert (await cl.get("/api/admin/schedule", headers=AUTH)).json()["interval_minutes"] == 60

@@ -1,3 +1,4 @@
+
 """Vector store Qdrant (opcional: `pip install unsa-mind[qdrant]`).
 
 Colección con vector denso (coseno) + vector sparse "bm25" (TF por token con modificador IDF
@@ -171,6 +172,21 @@ class QdrantVectorStore:
                 self.collection, payload={"active": False}, points=flt, wait=True
             )
         return n
+
+    async def list_chunks(self, doc_id: str) -> list[Chunk]:
+        await self._ensure()
+        m = self._m
+        flt = m.Filter(must=[m.FieldCondition(key="doc_id", match=m.MatchValue(value=doc_id))])
+        out: list[Chunk] = []
+        offset = None
+        while True:
+            points, offset = await self._client.scroll(
+                self.collection, scroll_filter=flt, limit=256, offset=offset, with_payload=True
+            )
+            out.extend(self._chunk(p.payload) for p in points)
+            if offset is None:
+                break
+        return sorted(out, key=lambda ch: ch.position)
 
     async def count(self, *, active_only: bool = True) -> int:
         await self._ensure()
