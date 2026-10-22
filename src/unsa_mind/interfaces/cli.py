@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import logging
 import sys
 from collections.abc import Callable, Sequence
 
@@ -320,6 +321,17 @@ def _override_settings(a: argparse.Namespace) -> Settings:
     return settings.model_copy(update=update) if update else settings
 
 
+def _show_progress() -> None:
+    """Muestra en stderr el avance de la ingesta (archivo, OCR por página, embeddings)."""
+    logger = logging.getLogger("unsa_mind")
+    logger.setLevel(logging.INFO)
+    if not any(getattr(h, "_unsa_progress", False) for h in logger.handlers):
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter("  · %(message)s"))
+        handler._unsa_progress = True  # type: ignore[attr-defined]
+        logger.addHandler(handler)
+
+
 def main(argv: Sequence[str] | None = None, container_factory: ContainerFactory | None = None) -> int:
     for stream in (sys.stdout, sys.stderr):  # Windows: evita UnicodeEncodeError con tildes
         try:
@@ -330,6 +342,9 @@ def main(argv: Sequence[str] | None = None, container_factory: ContainerFactory 
         args = build_parser().parse_args(argv)
     except SystemExit as exc:
         return int(exc.code) if isinstance(exc.code, int) else EXIT_USAGE
+
+    if args.command == "ingest":
+        _show_progress()
 
     factory = container_factory or _default_factory
     try:

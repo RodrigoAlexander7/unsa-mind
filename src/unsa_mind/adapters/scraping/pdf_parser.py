@@ -6,6 +6,7 @@ import io
 import math
 import re
 from collections import Counter
+from collections.abc import Callable
 
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
@@ -31,9 +32,32 @@ def _is_caps_title(line: str) -> bool:
     return bool(letters) and len(line) <= 80 and all(c.isupper() for c in letters)
 
 
+_OCR_PAGE = re.compile(r"^## Page \d+\s*$", re.MULTILINE)
+_OCR_MARKERS = re.compile(
+    r"^\*\[Image OCR\]\s*$|^\[End OCR\]\*\s*$|^\*\[No text could be extracted from this page\]\*\s*$",
+    re.MULTILINE,
+)
+
+
 class PdfParser:
+    """PDF con texto vía pypdf. Si no hay texto y se inyecta `ocr` (bytes -> Markdown de
+    markitdown-ocr), se transcribe cada página y se aplica la misma limpieza y estructura."""
+
+    def __init__(self, ocr: Callable[[bytes], str] | None = None) -> None:
+        self._ocr = ocr
+
     def supports(self, content_type: str) -> bool:
         return content_type.split(";")[0].strip().lower() == "application/pdf"
+
+    def _ocr_pages(self, body: bytes) -> list[str]:
+        assert self._ocr is not None
+        markdown = self._ocr(body)
+        if re.search(r"^\*\[Error", markdown, re.MULTILINE):
+            raise ParseError("OCR incompleto: " + markdown[:200])
+        parts = _OCR_PAGE.split(markdown)
+        if parts and not parts[0].strip():  # lo anterior al primer "## Page 1"
+            parts = parts[1:]
+        return [_OCR_MARKERS.sub("", part).strip() for part in parts]
 
     def parse(self, raw: RawDocument, *, base_metadata: dict) -> ParsedDocument:
         try:
@@ -42,10 +66,16 @@ class PdfParser:
             meta_title = (reader.metadata.title if reader.metadata else None) or ""
         except (PyPdfError, ValueError, OSError, KeyError) as exc:
             raise ParseError(f"PDF ilegible: {exc}") from exc
+        ocr_used = False
         if not any(p.strip() for p in pages):
-            raise ParseError(
-                "El PDF no contiene texto extraíble (probablemente escaneado); el OCR no está soportado."
-            )
+            if self._ocr is None:
+                raise ParseError(
+                    "El PDF no contiene texto extraíble (probablemente escaneado). Active el OCR "
+                    "con UNSA_OCR_PROVIDER=agy (ver docs/OPERACION.md)."
+                )
+            pages, ocr_used = self._ocr_pages(raw.body), True
+            if not any(p.strip() for p in pages):
+                raise ParseError("El OCR no devolvió texto para el PDF")
         page_lines = [[ln.rstrip() for ln in p.splitlines() if ln.strip()] for p in pages]
         page_lines = self._strip_repeated(page_lines)
         lines = [ln for pl in page_lines for ln in pl]
@@ -62,7 +92,7 @@ class PdfParser:
             title=title,
             markdown=markdown,
             content_hash=sha256(markdown),
-            metadata={**base_metadata, "pages": len(pages)},
+            metadata={**base_metadata, "pages": len(pages), **({"ocr": True} if ocr_used else {})},
             fetched_at=raw.fetched_at,
         )
 

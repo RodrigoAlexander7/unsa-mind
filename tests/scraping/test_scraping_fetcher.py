@@ -153,7 +153,8 @@ async def test_polite_delay_per_domain():
 
 
 def test_factory_builds():
-    assert isinstance(build_fetcher(Settings(fetcher="httpx")), HttpxFetcher)
+    assert isinstance(build_fetcher(Settings(fetcher="httpx"))._web, HttpxFetcher)
     parsers = build_parsers(Settings())
     assert any(p.supports("text/html") for p in parsers)
     assert any(p.supports("application/pdf") for p in parsers)
+    assert any(p.supports("text/markdown") for p in parsers)
