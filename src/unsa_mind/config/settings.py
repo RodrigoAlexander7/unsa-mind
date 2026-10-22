@@ -25,9 +25,19 @@ class Settings(BaseSettings):
     # --- Embeddings (puerto EmbedderPort) ---
     embedder_provider: Literal["hashing", "gemini", "openai_compat", "local"] = "hashing"
     embedder_model: str | None = None
-    embedder_dimension: int = 512
+    embedder_dimension: int = 512  # hashing: libre; BGE-M3 (local): 1024
     embedder_base_url: str | None = None  # openai_compat (OpenRouter, vLLM, Ollama...)
     embedder_api_key: str | None = None
+
+    # --- OCR de PDF escaneados y Office (extras `ocr-light` / `ocr`) ---
+    # tesseract: OCR clásico local, liviano (recomendado para libros); agy: modelo de visión
+    ocr_provider: Literal["none", "agy", "tesseract"] = "none"
+    ocr_model: str = "gemini-3.8-flash-medium"  # solo agy: modelo de visión de `agy models`
+    ocr_lang: str = "spa"  # solo tesseract: idioma(s), p. ej. "spa+eng"
+    tesseract_bin: str = "tesseract"
+    ocr_timeout_s: float = 120.0  # por página
+    ocr_max_pages: int = 0  # páginas por PDF, antes de empezar; 0 = automático (agy 80, tesseract 1000)
+    ocr_concurrency: int = 3  # páginas transcritas en paralelo
 
     # --- Almacenamiento ---
     vector_store: Literal["memory", "sqlite", "qdrant"] = "sqlite"
@@ -42,6 +52,7 @@ class Settings(BaseSettings):
     user_agent: str = "UnsaMindBot/0.1 (+asistente institucional; contacto: configurar)"
     request_delay_s: float = 1.0
     respect_robots: bool = True
+    raw_dir: Path = Path("data/raw")  # carpeta de documentos locales (único lugar legible)
     sources_file: Path = Path("config/sources.yaml")
 
     # --- Actualización programada (modificable en caliente vía API/CLI) ---

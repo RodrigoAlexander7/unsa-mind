@@ -20,6 +20,8 @@ dependencies = [
 scrapling = ["scrapling[fetchers]"]
 qdrant = ["qdrant-client>=1.9"]
 local-embeddings = ["sentence-transformers>=3"]
+ocr-light = ["pymupdf>=1.24"]  # PDF escaneados con Tesseract (binario del sistema)
+ocr = ["pymupdf>=1.24", "markitdown[pdf,docx,pptx,xlsx]>=0.1.8", "markitdown-ocr>=0.1.1"]  # + Office
 dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.5"]
 
 [project.scripts]

@@ -133,7 +133,8 @@ async def test_dimension_change_detected(tmp_path):
 
 async def test_embedder_change_detected_via_factory(tmp_path):
     emb = HashingEmbedder(DIM)
-    s1 = Settings(data_dir=tmp_path, vector_store="sqlite", embedder_dimension=DIM, _env_file=None)
+    s1 = Settings(data_dir=tmp_path, vector_store="sqlite", embedder_provider="hashing",
+                  embedder_dimension=DIM, _env_file=None)
     build_vector_store(s1, emb)
     s2 = Settings(data_dir=tmp_path, vector_store="sqlite", embedder_dimension=DIM,
                   embedder_provider="local", _env_file=None)

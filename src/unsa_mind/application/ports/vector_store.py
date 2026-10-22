@@ -15,6 +15,10 @@ class VectorStorePort(Protocol):
         """Marca como inactivos (no se borran) los chunks de un documento. Devuelve cuántos."""
         ...
 
+    async def list_chunks(self, doc_id: str) -> list[Chunk]:
+        """Chunks de un documento (activos o no), ordenados por `position`. Solo lectura."""
+        ...
+
     async def search(
         self,
         *,

@@ -8,7 +8,7 @@
 | API | FastAPI + Uvicorn, Pydantic v2 | — | SSE para streaming, JSON-RPC para A2A |
 | Configuración | pydantic-settings (`UNSA_*`, `.env`) | — | Un único `Settings` |
 | LLM | Claude, Gemini, OpenRouter, **agy** (CLI Antigravity) | `fake` para pruebas | `agy` no requiere API key |
-| Embeddings | `hashing` (offline) · Gemini · compatible OpenAI (OpenRouter, Ollama, vLLM) · local (sentence-transformers, BGE-M3) | — | Cambiar de modelo exige reindexar |
+| Embeddings | `hashing` (por defecto, offline, pruebas) · **local (sentence-transformers, BGE-M3, recomendado)** · Gemini · compatible OpenAI (OpenRouter, Ollama, vLLM) | — | Cambiar de modelo exige reindexar |
 | Vector store | SQLite (FTS5 + vectores float32, RRF) | Qdrant, memoria | Híbrido denso + BM25 |
 | Persistencia | SQLite (`unsa_mind.db`, WAL, migraciones) | memoria | Fuentes, documentos, schedule, informes |
 | Scraping | httpx (cortés, robots.txt, reintentos) | Scrapling (opcional, anti-bot) | |

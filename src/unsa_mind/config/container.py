@@ -57,6 +57,7 @@ def build_container(settings: Settings | None = None, *, with_scheduler: bool = 
 
     s = settings or get_settings()
     s.data_dir.mkdir(parents=True, exist_ok=True)
+    s.raw_dir.mkdir(parents=True, exist_ok=True)
 
     llm = build_llm(s)
     embedder = build_embedder(s)

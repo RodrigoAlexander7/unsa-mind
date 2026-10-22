@@ -6,9 +6,13 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Re
 from fastapi.responses import JSONResponse
 
 from unsa_mind.config.container import Container
-from unsa_mind.domain.entities import Schedule
+from unsa_mind.domain.entities import Authority, DocumentRecord, Schedule
 from unsa_mind.interfaces.api.deps import get_container, require_admin
 from unsa_mind.interfaces.api.schemas import (
+    ChunkOut,
+    DocumentChunks,
+    DocumentOut,
+    DocumentPage,
     ScheduleIn,
     ScheduleOut,
     SourceIn,
@@ -16,7 +20,7 @@ from unsa_mind.interfaces.api.schemas import (
     StatsOut,
     UpdateRequest,
 )
-from unsa_mind.interfaces.common import update_report_dict
+from unsa_mind.interfaces.common import iso, update_report_dict
 
 router = APIRouter(prefix="/api/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
@@ -106,6 +110,70 @@ async def trigger_update(
 async def reports(limit: int = 20, c: Container = Depends(get_container)) -> list[dict]:
     limit = max(1, min(limit, 200))
     return [update_report_dict(r) for r in await c.settings_repo.list_reports(limit)]
+
+
+def _doc_out(d: DocumentRecord) -> DocumentOut:
+    return DocumentOut(
+        doc_id=d.doc_id,
+        source_id=d.source_id,
+        url=d.url,
+        title=d.title,
+        version=d.version,
+        content_hash=d.content_hash,
+        fetched_at=iso(d.fetched_at),
+        active=d.active,
+    )
+
+
+@router.get("/documents", response_model=DocumentPage)
+async def list_documents(
+    source_id: str | None = None,
+    active_only: bool = True,
+    limit: int = 50,
+    offset: int = 0,
+    c: Container = Depends(get_container),
+) -> DocumentPage:
+    """Solo lectura: documentos indexados (más recientes primero)."""
+    limit = max(1, min(limit, 200))
+    offset = max(0, offset)
+    docs = [
+        d
+        for d in await c.documents.list_documents(active_only=active_only)
+        if source_id is None or d.source_id == source_id
+    ]
+    docs.sort(key=lambda d: d.fetched_at, reverse=True)
+    return DocumentPage(
+        total=len(docs),
+        limit=limit,
+        offset=offset,
+        items=[_doc_out(d) for d in docs[offset : offset + limit]],
+    )
+
+
+@router.get("/documents/{doc_id}/chunks", response_model=DocumentChunks)
+async def document_chunks(doc_id: str, c: Container = Depends(get_container)) -> DocumentChunks:
+    """Solo lectura: el texto indexado (chunks) de un documento, en orden."""
+    doc = next((d for d in await c.documents.list_documents(active_only=False) if d.doc_id == doc_id), None)
+    if doc is None:
+        raise HTTPException(404, f"Documento '{doc_id}' no encontrado")
+    chunks = await c.vector_store.list_chunks(doc_id)
+    return DocumentChunks(
+        document=_doc_out(doc),
+        chunks=[
+            ChunkOut(
+                id=ch.id,
+                position=ch.position,
+                section=ch.section,
+                text=ch.text,
+                context=ch.context,
+                authority=Authority(ch.authority).value,
+                metadata=ch.metadata,
+                active=ch.active,
+                updated_at=iso(ch.updated_at),
+            )
+            for ch in chunks
+        ],
+    )
 
 
 @router.get("/stats", response_model=StatsOut)

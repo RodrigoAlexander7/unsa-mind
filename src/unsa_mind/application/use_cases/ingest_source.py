@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from collections import deque
@@ -16,7 +17,14 @@ from unsa_mind.application.ports import (
     VectorStorePort,
 )
 from unsa_mind.application.services.chunker import ChunkerConfig, chunk_document
-from unsa_mind.domain.entities import DocumentRecord, RawDocument, Source, SourceReport, sha256
+from unsa_mind.domain.entities import (
+    DIRECTORY_CONTENT_TYPE,
+    DocumentRecord,
+    RawDocument,
+    Source,
+    SourceReport,
+    sha256,
+)
 from unsa_mind.domain.errors import ParseError
 
 log = logging.getLogger(__name__)
@@ -61,8 +69,10 @@ class IngestSource:
             try:
                 raw = await self._fetcher.fetch(url, source_id=source.id)
                 report.pages_fetched += 1
-                await self._process(raw, source, report)
-                if source.follow_links:
+                is_dir = raw.content_type == DIRECTORY_CONTENT_TYPE
+                if not is_dir:
+                    await self._process(raw, source, report)
+                if source.follow_links or is_dir:  # una carpeta local siempre se recorre
                     for link in raw.links:
                         link = urldefrag(link)[0]
                         if link not in seen and (link_re is None or link_re.search(link)):
@@ -74,13 +84,16 @@ class IngestSource:
 
     async def _process(self, raw: RawDocument, source: Source, report: SourceReport) -> None:
         parser = self._parser_for(raw.content_type)
-        parsed = parser.parse(raw, base_metadata=dict(source.metadata))
+        log.info("[%s] leyendo %s", source.id, raw.url)
+        # En un hilo: el OCR puede tardar minutos y no debe bloquear el servidor
+        parsed = await asyncio.to_thread(parser.parse, raw, base_metadata=dict(source.metadata))
         if not parsed.markdown.strip():
             raise ParseError("documento sin contenido textual")
 
         previous = await self._documents.get_active(raw.url)
         if previous and previous.content_hash == parsed.content_hash:
             report.documents_unchanged += 1
+            log.info("[%s] sin cambios: %s", source.id, raw.url)
             return
 
         version = previous.version + 1 if previous else 1
@@ -91,6 +104,7 @@ class IngestSource:
         vectors: list[list[float]] = []
         texts = [c.indexable_text for c in chunks]
         for i in range(0, len(texts), _EMBED_BATCH):
+            log.info("[%s] embeddings %d/%d: %s", source.id, min(i + _EMBED_BATCH, len(texts)), len(texts), raw.url)
             vectors.extend(await self._embedder.embed_documents(texts[i : i + _EMBED_BATCH]))
 
         await self._store.upsert(chunks, vectors)

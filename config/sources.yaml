@@ -23,4 +23,12 @@ sources:
     authority: low
     interval_minutes: 240
     metadata: {tema: general}
+  # Documentos locales: copie PDF/HTML/TXT/MD a data/raw (se recorre recursivamente).
+  # `raw:` = la carpeta UNSA_RAW_DIR; `raw:normas` = su subcarpeta normas/.
+  - id: documentos-locales
+    name: Documentos locales
+    url: "raw:"
+    authority: high
+    max_pages: 500
+    metadata: {origen: local}
   # TODO: confirmar URLs reales de reglamentos, TUPA y convenios antes de producción.

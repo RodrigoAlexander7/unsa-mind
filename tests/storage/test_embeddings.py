@@ -129,7 +129,7 @@ async def test_local_embedder_with_injected_model():
 
 def test_factory(tmp_path):
     base = {"data_dir": tmp_path, "_env_file": None}
-    h = build_embedder(Settings(embedder_dimension=64, **base))
+    h = build_embedder(Settings(embedder_provider="hashing", embedder_dimension=64, **base))
     assert isinstance(h, HashingEmbedder) and h.dimension == 64
     with pytest.raises(EmbeddingError):
         build_embedder(Settings(embedder_provider="gemini", **base))

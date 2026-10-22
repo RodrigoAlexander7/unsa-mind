@@ -9,6 +9,9 @@ from enum import Enum
 from typing import Any
 
 
+DIRECTORY_CONTENT_TYPE = "inode/directory"  # RawDocument de una carpeta local (solo aporta enlaces)
+
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
